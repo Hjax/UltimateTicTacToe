@@ -47,8 +47,6 @@ class board:
             if self.drawbitboards[side_index] & moves[board] == moves[board]:
                 self.drawbitboards[side_index] ^= moves[board]
                 
-            
-
         
     # checks if a bitboard is still winnable for a player
     # this takes the bitboard of the OPPOSING player, and checks
@@ -66,6 +64,14 @@ class board:
             if minibitboard & cond == cond:
                 return True
         return False
+
+    def score(self):
+        # positive scores are good for the side that goes first (side to move == 1, second index)
+        for bbb in range(2):
+            if self.is_won(self.largebitboards[bbb]):
+                return 10000 * ((bbb * 2) - 1)
+
+        return 0
 
     def print_board(self):
         # for each row of the output
