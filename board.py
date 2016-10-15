@@ -1,6 +1,6 @@
 import time, random
 
-from profilehooks import profile
+#from profilehooks import profile
 
 # type out the 8 winning sequences since there isn't a great way to generate them
 win_conditions = [0b000000111, 0b000111000, 0b111000000,
@@ -24,14 +24,31 @@ class board:
     # the move format is (index into minibitboards, move)
     # these methods need to update the large bitboards as well
     def make(self, board, move):
-        self.minibitboards[board][self.side_to_move + 1 / 2] |= move
-        if self.is_won(self.minibitboards[board][self.side_to_move + 1 / 2]):
-            selflargebitboards[self.side_to_move + 1 / 2] |= moves[board]
+        side_index = (self.side_to_move + 1) / 2
+        print(side_index)
+        self.minibitboards[board][side_index] |= move
+        current = self.minibitboards[board][side_index]
+        if self.is_won(current):
+            self.largebitboards[side_index] |= moves[board]
+        if not self.is_winnable(current):
+            self.drawbitboards[side_index] |= moves[board]
         self.side_to_move *= -1
         
     def unmake(self, board, move):
-        self.minibitboards[board][self.side_to_move + 1 / 2] ^= move
         self.side_to_move *= -1
+        side_index = (self.side_to_move + 1) / 2
+        self.minibitboards[board][self.side_to_move + 1 / 2] ^= move
+        current = self.minibitboards[board][side_index]
+        # there might be a better way to do this
+        if not self.is_won(current):
+            if self.largebitboards[side_index] & moves[board] == moves[board]:
+                self.largebitboards[side_index] ^= moves[board]
+        if self.is_winnable(current):
+            if self.drawbitboards[side_index] & moves[board] == moves[board]:
+                self.drawbitboards[side_index] ^= moves[board]
+                
+            
+
         
     # checks if a bitboard is still winnable for a player
     # this takes the bitboard of the OPPOSING player, and checks
@@ -71,7 +88,7 @@ class board:
                 print ""
                 print "______________________",
             print ""
-@profile
+#@profile
 def speed_test():
 	start = time.time()
 	count = 0
@@ -79,12 +96,11 @@ def speed_test():
 		board = random.randint(0, 8)
 		cell = random.randint(0, 8)
 		foo.make(board, moves[cell])
-		foo.is_winnable(foo.minibitboards[board][foo.side_to_move + 1 / 2])
-		foo.is_won(foo.minibitboards[board][foo.side_to_move + 1 / 2])
 		foo.unmake(board, moves[cell])
 		count += 1
 	print(count / 10)
 foo = board()
-foo.make(4, moves[5])
-foo.print_board()
+#foo.make(4, moves[5])
+#foo.print_board()
 #speed_test()
+
