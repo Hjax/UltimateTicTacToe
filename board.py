@@ -23,20 +23,34 @@ class board:
     # these methods need to update the large bitboards as well
     def make(self, board, move):
         side_index = (self.side_to_move + 1) // 2
-        self.minibitboards[board][side_index] += move
+
+        # new
         current = self.minibitboards[board][side_index]
+        current += move
+
+        # old
+        # self.minibitboards[board][side_index] += move
+        # current = self.minibitboards[board][side_index]
+
         if self.is_won(current):
             self.largebitboards[side_index] += moves[board]
         self.side_to_move *= -1
-        
+
     def unmake(self, board, move):
         self.side_to_move *= -1
         side_index = (self.side_to_move + 1) // 2
-        self.minibitboards[board][side_index] -= move
+
+        # new
         current = self.minibitboards[board][side_index]
+        current -= move
+
+        # old
+        # self.minibitboards[board][side_index] -= move
+        # current = self.minibitboards[board][side_index]
+
         if not self.is_won(current):
             if self.largebitboards[side_index] & moves[board] == moves[board]:
-                self.largebitboards[side_index] -+ moves[board]
+                self.largebitboards[side_index] -= moves[board]
                 
     # checks if a bitboard is still winnable for a player
     # this takes the bitboard of the OPPOSING player, and checks

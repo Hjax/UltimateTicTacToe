@@ -2,44 +2,98 @@
 #include <array>
 #include <ctime>
 #include <iostream>
+#include <vector>
 
-std::array<int,9> moves = {1, 2, 4, 8, 16, 32, 64, 128, 256};
-std::array<int,8> wins  = {7, 56, 448, 292, 146, 73, 273, 84};
+std::array<unsigned short,9> ALL_MOVES = {1, 2, 4, 8, 16, 32, 64, 128, 256};
+std::array<unsigned short,8> ALL_WINS  = {7, 56, 448, 292, 146, 73, 273, 84};
+
+unsigned short FULL_BOARD = 511;
+unsigned short BOARD_MASK = 240;
+unsigned short SQUARE_MASK = 15;
+
 
 class board {
-	int small[9][2] = {};
-	int large[2] = {};
-	int side = 1;
+	unsigned short int small[2][9] = {};
+	unsigned short int large[2] = {};
+	std::vector<unsigned short> moves;
+	bool side = false;
+
+	bool draw = false;
+	bool x_wins = false;
+	bool o_wins = false;
+
+	// The bitmap (one value true) of the last move
+	unsigned short last_move = 999;
 	
 public:
 
-	void make(int board, int move) {
-		int side_index = (side + 1) / 2;
-		small[board][side_index] += move;
-		if (is_won(small[board][side_index])) {
-			large[side_index] += moves[board];
+	void make(unsigned short move) {
+		unsigned short board  = move & BOARD_MASK;
+		unsigned short square = move & SQUARE_MASK;
+
+
+		small[side][board] += ALL_MOVES[square];
+		if (is_won(small[side][board])) {
+			large[side] += ALL_MOVES[board];
 		}
-		side *= -1;
+		side = !side;
 	}
 
-	void unmake(int board, int move) {
-		side *= -1;
-		int side_index = (side + 1) / 2;
-		small[board][side_index] -= move;
-		if (!is_won(small[board][side_index])) {
-			if ((large[side_index] & moves[board]) == moves[board]) {
-				large[side_index] -= moves[board];
-			}
-		}
-	}
-
-	bool is_won(int board) {
-		for (int i = 0; i < wins.size(); i++) {
-			if ((board & wins[i]) == wins[i]) {
+	static bool is_won(unsigned short board) {
+		for (int i = 0; i < ALL_WINS.size(); i++) {
+			if ((board & ALL_WINS[i]) == ALL_WINS[i]) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	static bool is_drawn(unsigned short board1, unsigned short board2) {
+		for (int i = 0; i < ALL_WINS.size(); i++) {
+			if ((board1 & ALL_WINS[i]) == 0 || (board2 & ALL_WINS[i]) == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool any_board() {
+
+		if (last_move != 999) {
+			return (large[0] & large[1] & last_move) > 0 || (large[0] & large[1]) == FULL_BOARD;
+		}
+
+		return true;
+
+	}
+
+	static unsigned short move_to_char(unsigned short board, unsigned short square) {
+		return (board << 4) + square;
+	}
+
+	void movegen() {
+		if (any_board()) {
+			for (int i = 0; i < 9; i++) {
+				if (!is_won(small[0][i]) && !is_won(small[1][i]) && !is_drawn(small[0][i], small[1][i])) {
+					for (int m = 0; m < 9; m++) {
+						if ((small[0][i] & small[1][i] & ALL_MOVES[m]) == 0) {
+							moves.emplace_back(move_to_char(i, m));
+						}
+					}
+				}
+			}
+		}
+		else {
+			for (int m = 0; m < 9; m++) {
+				if ((small[0][last_move] & small[1][last_move] & ALL_MOVES[m]) == 0) {
+					moves.emplace_back(move_to_char(last_move, m));
+				}
+			}
+		}
+	}
+
+	static int rollout(board b) {
+
 	}
 
 	void print() {
@@ -55,10 +109,16 @@ public:
 					else {
 						selected = 2 << square_offset - 1;
 					}
-					if ((small[board_offset][0] & selected) > 0) {
+					if (is_won(small[0][board_offset])) {
+						std::cout << "X";
+					}  
+					else if (is_won(small[1][board_offset])) {
+						std::cout << "O";
+					}
+					else if ((small[0][board_offset] & selected) > 0) {
 						std::cout << "X";
 					}
-					else if ((small[board_offset][1] & selected) > 0) {
+					else if ((small[1][board_offset] & selected) > 0) {
 						std::cout << "O";
 					}
 					else {
@@ -76,10 +136,13 @@ public:
 };
 
 int main() {
+
 	board b;
 	
-	b.make(3, moves[3]);
+	b.movegen();
 
-	b.print();
+	std::cout << "done";
+
+
 }
 
