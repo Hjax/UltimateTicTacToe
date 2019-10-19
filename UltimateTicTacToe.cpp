@@ -11,8 +11,19 @@ unsigned short FULL_BOARD = 511;
 unsigned short BOARD_MASK = 240;
 unsigned short SQUARE_MASK = 15;
 
+unsigned short DRAW = 0;
+unsigned short XWIN = 1;
+unsigned short YWIN = 2;
+unsigned short NO_RESULT = 3;
+
+bool X = 0;
+bool Y = 1;
 
 class board {
+
+
+public:
+
 	unsigned short int small[2][9] = {};
 	unsigned short int large[2] = {};
 	std::vector<unsigned short> moves;
@@ -22,13 +33,14 @@ class board {
 	bool x_wins = false;
 	bool o_wins = false;
 
+	int rollouts = 0;
+	int wins = 0;
+
 	// The bitmap (one value true) of the last move
 	unsigned short last_move = 999;
-	
-public:
 
 	void make(unsigned short move) {
-		unsigned short board  = move & BOARD_MASK;
+		unsigned short board  = (move & BOARD_MASK) >> 4;
 		unsigned short square = move & SQUARE_MASK;
 
 
@@ -67,11 +79,25 @@ public:
 
 	}
 
+	int score() {
+		if (is_won(large[X])) {
+			return XWIN;
+		}
+		else if (is_won(large[Y])) {
+			return YWIN;
+		}
+		else if (is_drawn(large[X], large[Y])) {
+			return DRAW;
+		}
+		return NO_RESULT;
+	}
+
 	static unsigned short move_to_char(unsigned short board, unsigned short square) {
 		return (board << 4) + square;
 	}
 
 	void movegen() {
+		moves.clear();
 		if (any_board()) {
 			for (int i = 0; i < 9; i++) {
 				if (!is_won(small[0][i]) && !is_won(small[1][i]) && !is_drawn(small[0][i], small[1][i])) {
@@ -92,8 +118,21 @@ public:
 		}
 	}
 
-	static int rollout(board b) {
+	void make_random_move() {
+		if (moves.size() == 0) {
+			movegen();
+		}
+		make(moves[rand() % moves.size()]);
+	}
 
+	static int rollout(board b) {
+		
+		while (b.score() == NO_RESULT) {
+			b.make_random_move();
+			b.print();
+		}
+
+		return b.score();
 	}
 
 	void print() {
@@ -107,7 +146,7 @@ public:
 						selected = 1;
 					}
 					else {
-						selected = 2 << square_offset - 1;
+						selected = 2 << (square_offset - 1);
 					}
 					if (is_won(small[0][board_offset])) {
 						std::cout << "X";
@@ -127,11 +166,9 @@ public:
 					std::cout << "|";
 				}
 			}
-			if (row == 2 || row == 5) {
-				std::cout << "\n__________________";
-			}
 			std::cout << "\n";
 		}
+		std::cout << "\n";
 	}
 };
 
@@ -140,9 +177,20 @@ int main() {
 	board b;
 	
 	b.movegen();
+	b.rollout(b);
 
-	std::cout << "done";
+	auto begin = std::chrono::high_resolution_clock::now();
+	
+	for (int i = 0; i < 100000; i++) {
 
+		b.movegen();
+
+	}
+
+	auto end = std::chrono::high_resolution_clock::now();
+	auto dur = end - begin;
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+	std::cout << ms;
 
 }
 
