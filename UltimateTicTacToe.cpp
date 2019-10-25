@@ -89,18 +89,15 @@ public:
 	}
 
 	static bool is_drawn(unsigned short board1, unsigned short board2) {
-		for (int i = 0; i < 8; i++) {
-			if ((board1 & ALL_WINS[i]) == 0 || (board2 & ALL_WINS[i]) == 0) {
-				return false;
-			}
-		}
-		return true;
+		
+		return (board1 | board2) == FULL_BOARD;
+
 	}
 
 	bool any_board() {
 
 		if (last_move != 999) {
-			return (large[0] & large[1] & ALL_MOVES[last_move]) > 0 || (large[0] & large[1]) == FULL_BOARD;
+			return ((large[0] | large[1]) & ALL_MOVES[last_move]) > 0 || (large[0] & large[1]) == FULL_BOARD;
 		}
 
 		return true;
@@ -220,7 +217,7 @@ int main() {
 	
 	//b.rollout(b);
 
-	for (int i = 0; i < 100000; i++) {
+	for (int i = 0; i < 1000; i++) {
 
 		b.rollout(b);
 
