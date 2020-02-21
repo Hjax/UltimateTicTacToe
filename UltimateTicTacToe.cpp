@@ -43,11 +43,14 @@ class board {
 public:
 
 	unsigned short int small[2][9] = {};
-	unsigned short int large[2] = {};
+	unsigned short int large[3] = {};
 
 
 	unsigned short int moves[81] = {};
 	unsigned short int move_count = 0;
+
+	board* children[81] = {};
+	board* parent = NULL;
 
 
 	bool side = false;
@@ -67,21 +70,20 @@ public:
 		unsigned short board  = (move & BOARD_MASK) >> 4;
 		unsigned short square = move & SQUARE_MASK;
 
-		std::cout << "making ";
-		std::cout << board;
-		std::cout << " ";
-		std::cout << square;
-		std::cout << "\n";
-
 		last_move = square;
 
 		small[side][board] |= ALL_MOVES[square];
 		if (is_won(small[side][board])) {
 			large[side] |= ALL_MOVES[board];
 		}
+		else if (is_drawn(small[0][board], small[1][board])) {
+			large[2] |= ALL_MOVES[board];
+		}
+
+
 		side = !side;
 
-		print();
+		//print();
 	}
 
 	static bool is_won(unsigned short board) {
@@ -97,7 +99,7 @@ public:
 	bool any_board() {
 
 		if (last_move != 999) {
-			return ((large[0] | large[1]) & ALL_MOVES[last_move]) > 0 || (large[0] & large[1]) == FULL_BOARD;
+			return ((large[0] | large[1] | large[2]) & ALL_MOVES[last_move]) > 0;
 		}
 
 		return true;
@@ -111,7 +113,7 @@ public:
 		else if (is_won(large[O])) {
 			return YWIN;
 		}
-		else if (is_drawn(large[X], large[O])) {
+		else if (is_drawn(large[X], large[O] | large[2])) {
 			return DRAW;
 		}
 		return NO_RESULT;
@@ -157,6 +159,7 @@ public:
 		
 		while (b.score() == NO_RESULT) {
 			b.make_random_move();
+
 		}
 
 		return b.score();
@@ -217,7 +220,7 @@ int main() {
 	
 	//b.rollout(b);
 
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 20000; i++) {
 
 		b.rollout(b);
 
